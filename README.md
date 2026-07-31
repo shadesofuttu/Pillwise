@@ -2,5 +2,5 @@
 
 Team Members
 
-- UttU
-- Teammate
+- Utkarsh Verma 
+- Deepanshu pandey

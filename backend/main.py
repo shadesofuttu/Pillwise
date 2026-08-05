@@ -42,6 +42,7 @@ class IdentifyRequest(BaseModel):
 class ExplainRequest(BaseModel):
     medicineName: str
     rawText: str
+    language: str = "English"  # Default to English
 
 @app.get("/health")
 def health_check():
@@ -50,22 +51,27 @@ def health_check():
 
 @app.post("/api/identify")
 def identify(payload: IdentifyRequest):
-    """
-    POST /api/identify
-    Accepts base64 image data and returns identified medicine name + extracted text.
-    """
     try:
+        print("Image received")
+
         result = services.identify_medicine(payload.image)
-        return {
-            "medicineName": result.medicineName,
-            "rawText": result.rawText
-        }
+
+        print(result)
+
+        # Check if the image is actually medicine
+        if not result.isMedicine:
+            raise HTTPException(
+                status_code=400,
+                detail="The image does not appear to be medicine packaging. Please take a photo of medicine packaging, pills, or tablets."
+            )
+
+        return result
+
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.exception("Error during /api/identify execution:")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to identify medicine: {str(e)}"
-        )
+        print("ERROR:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/explain")
 def explain(payload: ExplainRequest):
@@ -74,7 +80,7 @@ def explain(payload: ExplainRequest):
     Accepts medicine name and raw text, returning structured, plain-language patient advice.
     """
     try:
-        result = services.explain_medicine(payload.medicineName, payload.rawText)
+        result = services.explain_medicine(payload.medicineName, payload.rawText, payload.language)
         return {
             "purpose": result.purpose,
             "dosageNote": result.dosageNote,

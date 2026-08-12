@@ -21,7 +21,7 @@
 
 <br>
 
-### 🌐 [Live Demo](https://pillwise-me.vercel.app) • 📦 [GitHub Repository](https://github.com/shadesofuttu/PillWise)
+### 🌐 [Live Demo](https://pillwise-me.vercel.app) • 📦 [GitHub Repository](https://github.com/shadesofuttu/PillWise) • 💼 [LinkedIn](https://www.linkedin.com/in/utkarsh-builds/)
 
 📷 **Capture** &nbsp; → &nbsp; 🧠 **Identify** &nbsp; → &nbsp; 💡 **Understand** &nbsp; → &nbsp; 🔊 **Listen**
 

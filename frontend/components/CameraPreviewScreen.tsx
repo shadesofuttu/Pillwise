@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Camera, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { stopCameraStream } from '@/lib/cameraCapture';
 
 interface CameraPreviewScreenProps {
@@ -10,28 +10,23 @@ interface CameraPreviewScreenProps {
   onError: (msg: string) => void;
 }
 
-export const CameraPreviewScreen: React.FC<CameraPreviewScreenProps> = ({ 
-  onCapture, 
-  onCancel, 
-  onError 
+export const CameraPreviewScreen: React.FC<CameraPreviewScreenProps> = ({
+  onCapture,
+  onCancel,
+  onError,
 }) => {
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [cameraError, setCameraError] = useState<string>('');
-  
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isLoading, setIsLoading]           = useState(true);
+  const [cameraError, setCameraError]       = useState('');
+
+  const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    // Small delay to ensure DOM is ready
-    setTimeout(() => {
-      initializeCamera();
-    }, 100);
-
+    const t = setTimeout(initializeCamera, 100);
     return () => {
-      if (streamRef.current) {
-        stopCameraStream(streamRef.current);
-      }
+      clearTimeout(t);
+      if (streamRef.current) stopCameraStream(streamRef.current);
     };
   }, []);
 
@@ -39,60 +34,35 @@ export const CameraPreviewScreen: React.FC<CameraPreviewScreenProps> = ({
     try {
       setIsLoading(true);
       setCameraError('');
-      
-      console.log('[CAMERA] Initializing...');
-      
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Camera not supported');
-      }
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera not supported');
 
-      // Get camera stream
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      }).catch(() => 
-        navigator.mediaDevices.getUserMedia({ video: true })
-      );
-      
-      console.log('[CAMERA] Stream obtained');
+      const stream = await navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: 'environment' } })
+        .catch(() => navigator.mediaDevices.getUserMedia({ video: true }));
+
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        
-        // Wait for video to load metadata before playing
         videoRef.current.onloadedmetadata = async () => {
           try {
-            if (videoRef.current) {
-              await videoRef.current.play();
-              console.log('[CAMERA] Video playing!');
+            await videoRef.current?.play();
+            setIsCameraActive(true);
+            setIsLoading(false);
+          } catch (e: any) {
+            if (e.name !== 'AbortError') throw e;
+            setTimeout(async () => {
+              await videoRef.current?.play();
               setIsCameraActive(true);
               setIsLoading(false);
-            }
-          } catch (playError: any) {
-            if (playError.name !== 'AbortError') {
-              console.error('[CAMERA] Play error:', playError);
-              throw playError;
-            }
-            // Ignore AbortError, retry play
-            console.log('[CAMERA] Play interrupted, retrying...');
-            setTimeout(async () => {
-              try {
-                await videoRef.current?.play();
-                setIsCameraActive(true);
-                setIsLoading(false);
-              } catch (e) {
-                console.error('[CAMERA] Retry failed:', e);
-              }
             }, 100);
           }
         };
       }
-      
     } catch (error: any) {
-      console.error('[CAMERA] Error:', error);
-      const msg = error.name === 'NotAllowedError' 
-        ? 'Camera permission denied'
-        : 'Failed to start camera';
+      const msg = error.name === 'NotAllowedError'
+        ? 'Camera permission was denied. Please allow camera access in your browser settings.'
+        : 'Failed to start camera. Please try uploading an image instead.';
       setCameraError(msg);
       onError(msg);
       setIsLoading(false);
@@ -101,41 +71,42 @@ export const CameraPreviewScreen: React.FC<CameraPreviewScreenProps> = ({
 
   const handleCapture = () => {
     if (!videoRef.current) return;
-    
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
+    canvas.width  = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
     ctx.drawImage(videoRef.current, 0, 0);
-    const image = canvas.toDataURL('image/jpeg', 0.8);
-    
-    if (streamRef.current) {
-      stopCameraStream(streamRef.current);
-    }
-    
+    const image = canvas.toDataURL('image/jpeg', 0.85);
+    if (streamRef.current) stopCameraStream(streamRef.current);
     onCapture(image);
   };
 
   const handleCancel = () => {
-    if (streamRef.current) {
-      stopCameraStream(streamRef.current);
-    }
+    if (streamRef.current) stopCameraStream(streamRef.current);
     onCancel();
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col items-center space-y-6 px-4 py-6">
-      <div className="w-full flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Camera Preview</h2>
-        <button onClick={handleCancel} className="p-2 hover:bg-gray-100 rounded-full" aria-label="Close">
-          <X className="w-6 h-6" />
+    <div className="w-full max-w-2xl mx-auto py-8 animate-slide-up">
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="font-serif text-heading-2 text-ink">Camera</h2>
+          <p className="text-sm text-ink-secondary mt-0.5">Position the medicine label clearly in frame</p>
+        </div>
+        <button
+          onClick={handleCancel}
+          className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-white hover:bg-[#F5F2EE] hover:border-accent-muted transition-all"
+          aria-label="Close camera"
+        >
+          <X className="w-5 h-5 text-ink-secondary" />
         </button>
       </div>
 
-      <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-800">
-        {/* Video - Always in DOM */}
+      {/* Viewfinder */}
+      <div className="relative w-full aspect-video bg-ink rounded-xl overflow-hidden border border-border shadow-card">
         <video
           ref={videoRef}
           autoPlay
@@ -143,48 +114,65 @@ export const CameraPreviewScreen: React.FC<CameraPreviewScreenProps> = ({
           muted
           className="w-full h-full object-cover"
         />
-        
-        {/* Loading Overlay */}
+
+        {/* Corner guides */}
+        {isCameraActive && !isLoading && !cameraError && (
+          <>
+            <span className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-white/70 rounded-tl-md" />
+            <span className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-white/70 rounded-tr-md" />
+            <span className="absolute bottom-20 left-3 w-6 h-6 border-b-2 border-l-2 border-white/70 rounded-bl-md" />
+            <span className="absolute bottom-20 right-3 w-6 h-6 border-b-2 border-r-2 border-white/70 rounded-br-md" />
+          </>
+        )}
+
+        {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-white z-20">
-            <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4" />
-            <p className="text-xl">Starting camera...</p>
+          <div className="absolute inset-0 bg-ink/90 flex flex-col items-center justify-center text-white gap-4 z-20">
+            <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <p className="text-sm font-medium">Starting camera…</p>
           </div>
         )}
-        
-        {/* Error Overlay */}
+
+        {/* Error overlay */}
         {cameraError && (
-          <div className="absolute inset-0 bg-red-50 flex flex-col items-center justify-center z-20">
-            <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-            <p className="text-red-700 mb-4">{cameraError}</p>
-            <button onClick={initializeCamera} className="px-6 py-3 bg-sky-600 text-white font-bold rounded-xl">
+          <div className="absolute inset-0 bg-[#FAF9F7] flex flex-col items-center justify-center gap-4 z-20 p-6 text-center">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-amber-500" />
+            </div>
+            <p className="text-sm text-ink-secondary leading-relaxed max-w-xs">{cameraError}</p>
+            <button
+              onClick={initializeCamera}
+              className="btn-primary text-sm px-5 min-h-[40px]"
+            >
               Try Again
             </button>
           </div>
         )}
-        
-        {/* Capture Button */}
+
+        {/* Capture button */}
         {!isLoading && !cameraError && (
-          <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center space-y-4 z-10">
-            <div className="bg-black/50 text-white px-4 py-2 rounded-full">
-              Position medicine label in frame
-            </div>
+          <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-3 pb-5 pt-3 bg-gradient-to-t from-black/60 to-transparent z-10">
             <button
               onClick={handleCapture}
               disabled={!isCameraActive}
-              className="w-20 h-20 bg-white border-4 border-sky-500 rounded-full flex items-center justify-center hover:scale-110 transition disabled:opacity-50"
+              className="w-16 h-16 rounded-full bg-white border-4 border-accent flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 shadow-lg"
+              aria-label="Capture photo"
             >
-              <div className="w-16 h-16 bg-sky-600 rounded-full flex items-center justify-center">
-                <Camera className="w-8 h-8 text-white" />
+              <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center">
+                <Camera className="w-5 h-5 text-white" />
               </div>
             </button>
           </div>
         )}
       </div>
 
-      <div className="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4">
-        <CheckCircle2 className="w-5 h-5 text-sky-600 inline mr-2" />
-        <span className="font-bold">Tips:</span> Good lighting, steady hand, clear text
+      {/* Tips strip */}
+      <div className="mt-4 flex items-center gap-3 bg-accent-light border border-accent-muted rounded-xl p-4">
+        <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" aria-hidden="true" />
+        <p className="text-sm text-ink-secondary">
+          <span className="font-medium text-ink">Tips: </span>
+          Good lighting · Steady hand · Label text clearly visible
+        </p>
       </div>
     </div>
   );

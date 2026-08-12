@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Volume2, VolumeX, RotateCcw, Info, Pill, Clock, ShieldAlert, AlertCircle } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Info, Pill, Clock, ShieldAlert, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { MedicineResult } from '@/types/medicine';
 import { speakText, stopSpeech } from '@/lib/speech';
 
@@ -13,32 +13,28 @@ interface ResultScreenProps {
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({ result, onScanAnother, language = 'English' }) => {
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
 
-  const getSpeechString = () => {
-    return `${result.medicineName}. ${result.strength ? result.strength + '.' : ''} Purpose: ${result.purpose}. Dosage: ${result.dosageNote}. Disclaimer: ${result.disclaimer}`;
-  };
-
-    const [speechError, setSpeechError] = useState<string | null>(null);
+  const getSpeechString = () =>
+    `${result.medicineName}. ${result.strength ? result.strength + '.' : ''} Purpose: ${result.purpose}. Dosage: ${result.dosageNote}. Disclaimer: ${result.disclaimer}`;
 
   const handleSpeak = () => {
     setIsSpeaking(true);
     setSpeechError(null);
-    const speechText = getSpeechString();
-    
     try {
       speakText(
-        speechText,
+        getSpeechString(),
         language,
         () => setIsSpeaking(false),
-        (error: string) => {
+        (error: unknown) => {
           setIsSpeaking(false);
-          setSpeechError(error || 'Unable to read text aloud. Speech synthesis may not be supported.');
+          const msg = error instanceof SpeechSynthesisErrorEvent ? error.error : typeof error === "string" ? error : null;
+          setSpeechError(msg || 'Unable to read text aloud. Speech synthesis may not be supported.');
         }
       );
     } catch (err: any) {
       setIsSpeaking(false);
       setSpeechError('Speech synthesis failed. Please check your browser settings.');
-      console.error('Speech error:', err);
     }
   };
 
@@ -47,13 +43,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({ result, onScanAnothe
     setIsSpeaking(false);
   };
 
-  // Automatically read aloud on mount
   useEffect(() => {
     handleSpeak();
-
-    return () => {
-      stopSpeech();
-    };
+    return () => { stopSpeech(); };
   }, [result]);
 
   const handleScanAnotherClick = () => {
@@ -61,124 +53,128 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({ result, onScanAnothe
     onScanAnother();
   };
 
-    return (
-    <div className="w-full max-w-4xl mx-auto space-y-8 py-8 animate-slide-up">
-      {/* Medicine Name Header */}
-      <header className="space-y-4">
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-6 py-8 animate-slide-up">
+
+      {/* ── Medicine Identity Card ── */}
+      <div className="card border-l-4 border-l-accent">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 text-sm text-primary-600 font-medium mb-3">
-              <div className="w-2 h-2 rounded-full bg-primary-600"></div>
-              <span>Medicine identified</span>
+          <div className="flex-1 min-w-0">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-accent uppercase tracking-wider mb-3">
+              <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+              Medicine identified
             </div>
-            <h1 className="font-serif text-heading-1 text-slate-900 mb-2">
+            <h1 className="font-serif text-heading-1 text-ink mb-1 break-words">
               {result.medicineName}
             </h1>
             {result.strength && (
-              <p className="text-xl text-slate-600 font-medium">
-                {result.strength}
-              </p>
+              <p className="text-lg text-ink-secondary font-medium">{result.strength}</p>
             )}
             {result.activeIngredient && (
-              <p className="text-base text-slate-500 mt-2">
-                Active ingredient: {result.activeIngredient}
+              <p className="text-sm text-ink-muted mt-1">
+                Active ingredient: <span className="text-ink-secondary font-medium">{result.activeIngredient}</span>
               </p>
             )}
           </div>
+          <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-accent-light flex items-center justify-center">
+            <Pill className="w-7 h-7 text-accent" aria-hidden="true" />
+          </div>
         </div>
-      </header>
+      </div>
 
-            {/* Action Buttons */}
+      {/* ── Action Buttons ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         {!isSpeaking ? (
           <button
             type="button"
             onClick={handleSpeak}
-            className="flex-1 min-h-[56px] bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white text-lg font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 px-6 py-3 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
+            className="btn-primary flex-1"
             aria-label="Read medicine details aloud"
           >
             <Volume2 className="w-5 h-5" aria-hidden="true" />
-            <span>Read Aloud</span>
+            Read Aloud
           </button>
         ) : (
           <button
             type="button"
             onClick={handleStop}
-            className="flex-1 min-h-[56px] bg-slate-600 hover:bg-slate-700 active:bg-slate-800 text-white text-lg font-semibold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center gap-2 px-6 py-3 focus:outline-none focus:ring-2 focus:ring-slate-600 focus:ring-offset-2"
+            className="flex-1 inline-flex items-center justify-center gap-2 min-h-[52px] bg-ink text-white font-semibold text-base rounded-btn px-6 py-3 transition-all hover:bg-ink-secondary"
             aria-label="Stop speech playback"
           >
             <VolumeX className="w-5 h-5" aria-hidden="true" />
-            <span>Stop Reading</span>
+            Stop Reading
           </button>
         )}
-
         <button
           type="button"
           onClick={handleScanAnotherClick}
-          className="flex-1 sm:flex-initial min-h-[56px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-lg font-semibold rounded-lg border border-slate-200 transition-all duration-200 flex items-center justify-center gap-2 px-6 py-3 focus:outline-none focus:ring-2 focus:ring-slate-600 focus:ring-offset-2"
+          className="btn-secondary flex-1 sm:flex-initial"
           aria-label="Scan another medicine"
         >
-          <RotateCcw className="w-5 h-5" aria-hidden="true" />
-          <span>New Scan</span>
+          <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          New Scan
         </button>
       </div>
 
-            {/* Speech Error Display */}
+      {/* ── Speech Error ── */}
       {speechError && (
         <div
           role="alert"
           aria-live="assertive"
-          className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-400 text-slate-800 flex items-start gap-4 animate-fade-in"
+          className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-fade-in"
         >
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="space-y-1">
-            <p className="text-base leading-relaxed text-slate-700">
-              {speechError}
-            </p>
-          </div>
+          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-sm text-amber-800 leading-relaxed">{speechError}</p>
         </div>
       )}
 
-      {/* Main Medicine Information */}
-      <main className="space-y-6">
-        {/* Purpose Section */}
-        <section className="bg-white border border-slate-200 rounded-lg p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-              <Info className="w-5 h-5 text-primary-600" aria-hidden="true" />
+      {/* ── Info Sections ── */}
+      <div className="space-y-4">
+
+        {/* Purpose */}
+        <section className="card group hover:shadow-card-hover transition-shadow duration-200">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent-light flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <Info className="w-5 h-5 text-accent" aria-hidden="true" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-serif text-heading-3 text-slate-900 mb-3">What it's for</h2>
-              <p className="text-body-lg text-slate-700 leading-relaxed">{result.purpose}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-serif text-heading-3 text-ink mb-2">What it's for</h2>
+              <p className="text-body-lg text-ink-secondary leading-relaxed">{result.purpose}</p>
             </div>
           </div>
         </section>
 
-        {/* Dosage Section */}
-        <section className="bg-white border border-slate-200 rounded-lg p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-primary-600" aria-hidden="true" />
+        {/* Dosage */}
+        <section className="card group hover:shadow-card-hover transition-shadow duration-200">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent-light flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <Clock className="w-5 h-5 text-accent" aria-hidden="true" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-serif text-heading-3 text-slate-900 mb-3">General usage</h2>
-              <p className="text-body-lg text-slate-700 leading-relaxed">{result.dosageNote}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-serif text-heading-3 text-ink mb-2">General usage</h2>
+              <p className="text-body-lg text-ink-secondary leading-relaxed">{result.dosageNote}</p>
             </div>
           </div>
         </section>
 
-        {/* Precautions Section */}
-        <section className="bg-white border border-slate-200 rounded-lg p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-              <ShieldAlert className="w-5 h-5 text-primary-600" aria-hidden="true" />
+        {/* Precautions */}
+        <section className="card group hover:shadow-card-hover transition-shadow duration-200">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <ShieldAlert className="w-5 h-5 text-amber-600" aria-hidden="true" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-serif text-heading-3 text-slate-900 mb-4">Important precautions</h2>
-              <ul className="space-y-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-serif text-heading-3 text-ink mb-3">Important precautions</h2>
+              <ul className="space-y-2.5">
                 {result.precautions.map((item, index) => (
-                  <li key={index} className="flex items-start gap-3 text-body-lg text-slate-700">
-                    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary-600 mt-2.5" aria-hidden="true" />
+                  <li
+                    key={index}
+                    className="flex items-start gap-3 text-body-lg text-ink-secondary animate-step-in"
+                    style={{ animationDelay: `${index * 60}ms` }}
+                  >
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+                    </span>
                     <span className="leading-relaxed">{item}</span>
                   </li>
                 ))}
@@ -187,18 +183,25 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({ result, onScanAnothe
           </div>
         </section>
 
-        {/* Disclaimer Section */}
-        <section className="bg-primary-50 border border-primary-200 rounded-lg p-6">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <Pill className="w-5 h-5 text-primary-600 mt-0.5" aria-hidden="true" />
-            </div>
-            <div className="flex-1">
-              <p className="text-base text-slate-700 leading-relaxed font-medium">{result.disclaimer}</p>
-            </div>
-          </div>
+        {/* Disclaimer */}
+        <section className="flex items-start gap-3 p-5 bg-accent-light border border-accent-muted rounded-xl">
+          <Pill className="w-4 h-4 text-accent flex-shrink-0 mt-1" aria-hidden="true" />
+          <p className="text-sm text-ink-secondary leading-relaxed">{result.disclaimer}</p>
         </section>
-      </main>
+      </div>
+
+      {/* ── Bottom CTA ── */}
+      <div className="pt-2 pb-4">
+        <button
+          type="button"
+          onClick={handleScanAnotherClick}
+          className="btn-primary w-full"
+          aria-label="Scan another medicine"
+        >
+          <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          Scan Another Medicine
+        </button>
+      </div>
     </div>
   );
 };

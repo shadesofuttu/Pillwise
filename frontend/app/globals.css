@@ -65,6 +65,22 @@
   100% { background-position: -200% 0; }
 }
 
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(193, 123, 78, 0.4); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 12px rgba(193, 123, 78, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(193, 123, 78, 0); }
+}
+
+@keyframes stepIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.45s ease-out forwards;
 }
@@ -73,8 +89,73 @@
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.animate-step-in {
+  animation: stepIn 0.35s ease-out forwards;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2.2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
 .shimmer {
   background: linear-gradient(90deg, #f0ece6 0%, #e8e4de 40%, #f0ece6 80%);
   background-size: 200% 100%;
   animation: shimmer 1.8s linear infinite;
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E8E4DE;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  background-color: #C17B4E;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.btn-primary:hover {
+  background-color: #A8663E;
+  box-shadow: 0 4px 12px rgba(193,123,78,0.25);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  background-color: #FFFFFF;
+  color: #1A1A1A;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #E8E4DE;
+  padding: 0.75rem 1.5rem;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #F5F2EE;
+  border-color: #C17B4E;
 }

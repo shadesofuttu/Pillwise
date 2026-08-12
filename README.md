@@ -5,6 +5,11 @@
 ### Know Your Medicine. Instantly. Clearly. Safely.
 
 **An accessibility-first AI medicine reader that transforms a photograph of a medicine label into clear, understandable information.**
+<br />
+
+<img src="Images/home.png" alt="PillWise - AI Medicine Intelligence" width="900"/>
+
+<br />
 
 <br>
 
@@ -15,6 +20,8 @@
 [![Languages](https://img.shields.io/badge/Python%20%7C%20TypeScript-3776AB?style=for-the-badge)](https://www.python.org/)
 
 <br>
+
+### 🌐 [Live Demo](https://pillwise-me.vercel.app) • 📦 [GitHub Repository](https://github.com/shadesofuttu/PillWise)
 
 📷 **Capture** &nbsp; → &nbsp; 🧠 **Identify** &nbsp; → &nbsp; 💡 **Understand** &nbsp; → &nbsp; 🔊 **Listen**
 

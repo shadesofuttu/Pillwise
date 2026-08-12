@@ -223,7 +223,6 @@ export const CaptureScreen: React.FC<CaptureScreenProps> = ({ onConfirm, onError
                 id="file-input"
                 type="file"
                 accept="image/*"
-                capture={isMobile ? 'environment' : undefined}
                 onChange={handleFileChange}
                 className="sr-only"
                 aria-label="Upload medicine image"
